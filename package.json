@@ -1,19 +1,29 @@
 {
-  "name": "timetable",
-  "version": "1.0.0",
-  "description": "Timetable for RTU MIREA",
-  "main": "server.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1"
-  },
-  "repository": {
-    "type": "git",
-    "url": "git+https://github.com/temacode/timetable.git"
-  },
-  "author": "Artem Mikhailov",
-  "license": "ISC",
-  "bugs": {
-    "url": "https://github.com/temacode/timetable/issues"
-  },
-  "homepage": "https://github.com/temacode/timetable#readme"
+    "name": "timetable",
+    "version": "1.0.0",
+    "description": "Timetable for RTU MIREA",
+    "main": "server.js",
+    "scripts": {
+        "server": "nodemon server.js",
+        "client": "npm run start --prefix client",
+        "dev": "concurrently --kill-others-on-fail \"npm run server\" \"npm run client\"",
+        "test": "echo \"Error: no test specified\" && exit 1"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/temacode/timetable.git"
+    },
+    "author": "Artem Mikhailov",
+    "license": "ISC",
+    "bugs": {
+        "url": "https://github.com/temacode/timetable/issues"
+    },
+    "homepage": "https://github.com/temacode/timetable#readme",
+    "dependencies": {
+        "axios": "^0.19.2",
+        "body-parser": "^1.19.0",
+        "concurrently": "^5.1.0",
+        "express": "^4.17.1",
+        "nodemon": "^2.0.2"
+    }
 }
