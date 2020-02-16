@@ -1,7 +1,12 @@
 import React from 'react';
+import Header from './components/Header';
+import MainContainer from './components/MainContainer';
 
 const App = props => (
     <div>
-        <h1>Привет мир!</h1>
+        <Header></Header>
+        <MainContainer></MainContainer>
     </div>
 );
+
+export default App;
