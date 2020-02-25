@@ -1,11 +1,11 @@
 import React from 'react';
 import styled from 'styled-components';
+import GroupContainer from './GroupContainer';
 
 const MainBlock = styled.div`
     width: 100%;
     min-height: 100%;
     padding: 20px;
-    background: red;
     box-sizing: border-box;
 `;
 
@@ -16,15 +16,17 @@ class Main extends React.Component {
     }
 
     componentDidUpdate() {
-        console.log(this.props.shedule);
+        console.log(this.props.groups);
     }
 
     render() {
-        return(
+        let groups = this.props.groups.map((e, i) => {
+            return (<GroupContainer key={i} group={e}></GroupContainer>);
+        });
+        return (
             <MainBlock>
-                <p>Боди</p>
                 <div>
-                    {this.props.shedule ? 'Чот есть' : 'Ничего нет' }
+                    {this.props.groups ? groups : 'Ничего нет'}
                 </div>
             </MainBlock>
         );

@@ -4,7 +4,7 @@ import { getSheduleDataThunkCreator } from '../reducers/mainReducer';
 
 let mapStateToProps = state => {
     return({
-        shedule: state.main.shedule ? state.main.shedule : null
+        groups: state.main.groups
     });
 }
 

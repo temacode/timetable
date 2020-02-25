@@ -1,15 +1,15 @@
 const path = require('path');
 const XLSX = require('xlsx');
 
-const groupPreg = new RegExp(/([а-я]{4})-(\d{2})-(\d{2})/gim);
-const cellPreg = new RegExp(/([a-z]+)(2{1})$/i);
-const cellNamePreg = new RegExp(/^[a-z]+/i);
-const cellNumPreg = new RegExp(/[0-9]+$/);
-const fullLessonPreg = new RegExp(/[^a-zA-Zа-яА-Я0-9\s\n.,]/gim);
-const lessonDataPreg = new RegExp(/((([0-9.,\sнкр]+)|)([A-Za-zА-Яа-я\s-]+))/gim);
-const weekPreg = new RegExp(/^([0-9.,нкр\s]+)/gim);
-const extraLetterInWeekPreg = new RegExp(/[.\sнкр]/gim);
-const lessonNamePreg = new RegExp(/[а-яА-Я]{2,}(\s|)([а-яА-Я\s]*)[а-яА-Я]/gim);
+const groupPreg = new RegExp(/([а-я]{4})-(\d{2})-(\d{2})/gim);//Название группы
+const cellPreg = new RegExp(/([a-z]+)(2{1})$/i);//Номер ячейки
+const cellNamePreg = new RegExp(/^[a-z]+/i);//Номер ячейки (только буквы)
+const cellNumPreg = new RegExp(/[0-9]+$/);//Номер ячейки (только цифры)
+const fullLessonPreg = new RegExp(/[^a-zA-Zа-яА-Я0-9\s\n.,]/gim);//Полностью значение ячейки с парой
+const lessonDataPreg = new RegExp(/((([0-9.,\sнкр]+)|)([A-Za-zА-Яа-я\s-.,]+)([0-9\s]+гр|))/gim);//Название предмета с его неделями
+const weekPreg = new RegExp(/^([0-9.,нкр\s]+)/gim);//Недели предмета
+const extraLetterInWeekPreg = new RegExp(/[.\sнкр]/gim);//Дополнительные символы, помимо дня в списке недель
+const lessonNamePreg = new RegExp(/[а-яА-Я]{2,}(\s|)([а-яА-Я\s]*)[а-яА-Я]/gim);//Название предмета
 
 function rus2translit(string) {
     let converter = {
@@ -59,7 +59,9 @@ function rus2translit(string) {
     return result.join('');
 }
 
-function getLessonObject(e) {
+//Сюда приходит пара с неделями
+function getLessonObject(e, lessonTeacher) {
+
     let lesson = {}
 
     lesson.week = e.match(weekPreg) ?
@@ -75,87 +77,198 @@ function getLessonObject(e) {
 
     lesson.name = e.match(lessonNamePreg) ? e.match(lessonNamePreg)[0] : '';
 
+    lesson.teacher = lessonTeacher;
+
     return lesson;
+}
+
+function getLessonArray(lessonArray, lessonTeacher) {
+    let lesson = [];
+
+    lessonArray.forEach(e => {
+        lesson.push(getLessonObject(e, lessonTeacher));
+    });
+
+    return lesson;
+}
+
+Date.prototype.getWeek = function () {
+    var date = new Date(this.getTime());
+    date.setHours(0, 0, 0, 0);
+    // Thursday in current week decides the year.
+    date.setDate(date.getDate() + 3 - (date.getDay() + 6) % 7);
+    // January 4 is always in week 1.
+    var week1 = new Date(date.getFullYear(), 0, 4);
+    // Adjust to Thursday in week 1 and count number of weeks from date to week1.
+    return 1 + Math.round(((date.getTime() - week1.getTime()) / 86400000
+        - 3 + (week1.getDay() + 6) % 7) / 7);
 }
 
 module.exports = app => {
     app.get('/api/timetable/', (req, res) => {
-        const shedule = XLSX.readFile(path.join(__dirname, '../public/shedule.xlsx'));
-        
-        let sheetName = shedule.SheetNames[0];
-        let sheet = shedule.Sheets[sheetName];
+        const workbook = XLSX.readFile(path.join(__dirname, '../public/shedule.xlsx'));
 
-        let groups = {};
+        const sheetName = workbook.SheetNames[0];
+        const sheet = workbook.Sheets[sheetName];
+
+        var weekNum = new Date();
+        weekNum = weekNum.getWeek();
+        weekNum = weekNum < 21 ? (weekNum - 6) : (weekNum - 32);
+
+        let groups = [];
+
+        let sheetKeys = [];
+
+        for (let i = 0; i < 26; i++) {
+            sheetKeys.push(String.fromCharCode(97 + i).toUpperCase());
+        }
+
+        for (let i = 0; i < 26; i++) {
+            for (let j = 0; j < 26; j++) {
+                sheetKeys.push(sheetKeys[i] + '' + String.fromCharCode(97 + j).toUpperCase());
+            }
+        }
 
         //Парсинг групп
         for (let cell in sheet) {
             if (cellPreg.test(cell) && groupPreg.test(sheet[cell].v)) {
-                let groupName = rus2translit(sheet[cell].v.match(groupPreg)[0]);
+                let groupNameRus = sheet[cell].v.match(groupPreg)[0];
+                let groupName = rus2translit(groupNameRus);
                 let cellName = cell.toString().match(cellNamePreg)[0];
-                let cellNum = cell.toString().match(cellNumPreg)[0]
+                let cellNum = cell.toString().match(cellNumPreg)[0];
+                let cellTeacher = (sheetKeys[sheetKeys.indexOf(cellName) + 2]);
 
                 let groupDataObject = {
                     cell: cell,
                     cellName: cellName,
-                    cellNum: cellNum
+                    cellNum: cellNum,
+                    cellTeacher: cellTeacher,
+                    groupName: groupNameRus
                 }
 
-                groups[groupName] = groupDataObject;
+                groups.push(groupDataObject);
             }
         }
 
-        let lessonNamesList = [];
-
-        for (let group in groups) {
+        groups.map(group => {
 
             let shedule = [];
 
             //Идем по расписанию и парсим предметы
             for (let i = 0; i < 6; i++) {
 
-                shedule[i] = [];
+                let even = 1;
+                let odd = 1;
+
+                var sheduleList = [];
 
                 for (let j = (i * 12); j < ((i * 12) + 12); j++) {
-                    let lessonInfo = {}
+                    var lessonInfo = {}
+
+                    //Здесь хранится номер пары
+                    lessonInfo.num = (j % 2 === 0) ? even++ : odd++;
+
+                    //Здесь хранится четность пары
+                    lessonInfo.parity = (j % 2) === 1 ? true : false;
 
                     //Получаем номер ячейки
-                    lessonInfo.cell = (groups[group].cellName + '' + (j + 4));
+                    lessonInfo.cell = (group.cellName + '' + (j + 4));
+
+                    //Номер ячейки с преподавателем
+                    lessonInfo.teacherCell = (group.cellTeacher + '' + (j + 4));
 
                     //Записываем строку без форматирования
                     lessonInfo.fullString = (typeof sheet[lessonInfo.cell] !== 'undefined' ? sheet[lessonInfo.cell].v : '').trim().replace(fullLessonPreg, '');
 
                     //Записывает данные о паре
                     let lessonData = lessonInfo.fullString.match(lessonDataPreg);
+
+                    let lessonTeacher = typeof sheet[lessonInfo.teacherCell] !== 'undefined' ?
+                        sheet[lessonInfo.teacherCell].v
+                            .trim()
+                            .replace(fullLessonPreg, '') :
+
+                        null;
+
+                    let lessonLocation = 'lol';
+
                     lessonData = lessonData ? lessonData : '';
+
+                    lessonInfo.debug = lessonData;
 
                     if (lessonData.length >= 1) {
 
-                        if (lessonData.length > 1) {
-                            lessonInfo.lesson = [];
-
-                            lessonData.forEach(e => {
-                                lessonInfo.lesson.push(getLessonObject(e));
-                            });
-                        } else {
-                            lessonInfo.lesson = getLessonObject(lessonData[0]);
-                        }
+                        lessonInfo.lesson = lessonData.length > 1 ? 
+                                                getLessonArray(lessonData, lessonTeacher) 
+                                                : getLessonObject(lessonData[0], lessonTeacher);
 
                         lessonInfo.reverseWeek = RegExp('кр').test(lessonInfo.week) ? true : false;
                     }
 
+                    function checkParity(weekNum, parity) {
+                        if (weekNum % 2 === 0 && parity === true) {
+                            return true
+                        }
+                        if (weekNum % 2 !== 0 && parity === false) {
+                            return true
+                        }
 
-                    shedule[i].push(lessonInfo);
-
-                    if (lessonNamesList.indexOf(lessonInfo.fullString) === -1) {
-                        lessonNamesList.push(lessonInfo.cell);
-                        lessonNamesList.push(lessonData);
-                        lessonNamesList.push(lessonInfo.cell);
+                        return false;
                     }
+
+                    //Сервер отдает готовое расписание
+                    //Фильтр по дню
+                    if (checkParity(weekNum, lessonInfo.parity)) {
+                        
+                        //Если предмет не пустой
+                        if (lessonInfo.lesson) {
+                            if (Array.isArray(lessonInfo.lesson)) {
+                                //Множественные предметы
+
+                                //Перебираем предметы
+                                let flag = true;
+                                lessonInfo.lesson.forEach(e => {
+                                    if (Array.isArray(e.week)) {
+                                        //Если есть недели и они соответствуют текущей
+                                        if (e.week.indexOf(weekNum) !== -1) {
+                                            sheduleList.push(lessonInfo);
+                                            flag = false;
+                                        }
+                                    } else {
+                                        sheduleList.push(lessonInfo);
+                                    }
+                                });
+                                if (flag) {
+                                    sheduleList.push({});
+                                }
+                            } else {
+                                //Единичные предметы
+
+                                //Если есть недели
+                                if (lessonInfo.lesson.week) {
+                                    //Если они соответствуют текущей неделе
+                                    if (lessonInfo.lesson.week.indexOf(weekNum) !== -1) {
+                                        sheduleList.push(lessonInfo);
+                                    } else {
+                                        sheduleList.push({});
+                                    }
+                                } else {
+                                    sheduleList.push(lessonInfo);
+                                }
+                            }
+                        } else {
+                            //Пустые пары, записываем, соблюдая четность
+                            sheduleList.push(lessonInfo);
+                        }
+                    }
+                    //sheduleList.push(lessonInfo);
                 }
+
+                shedule.push(sheduleList);
             }
 
-            groups[group].shedule = shedule;
-        }
+            group.shedule = [...shedule];
+        })
 
         res.status(200).send(groups);
     });
