@@ -59,9 +59,6 @@ const Teacher = styled.div`
 class LessonList extends React.Component {
     render() {
         let lessons = this.props.lessonList.map((e, i) => {
-            if (e.lesson && Array.isArray(e.lesson)) {
-                e.lesson = e.lesson[0];
-            }
             return (
                 <Lesson key={i}>
                     <Num>{i + 1}</Num>

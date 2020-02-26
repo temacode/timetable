@@ -1,9 +1,12 @@
 import axios from 'axios';
 
 const SHOW_SHEDULE = 'SHOW_SHEDULE';
+const SHOW_GROUPS = 'SHOW_GROUPS';
 
 let initialState = {
-    groups: []
+    groups: [],
+    groupsNames: [],
+    isSelectingGroup: false,
 }
 
 let mainReducer = (state = initialState, action) => {
@@ -15,6 +18,11 @@ let mainReducer = (state = initialState, action) => {
             sheduleState.groups = [...action.data];
             //console.log(sheduleState.groups);
             return sheduleState;
+        case SHOW_GROUPS:
+            let showGroupsState = { ...state };
+            showGroupsState.isSelectingGroup = !showGroupsState.isSelectingGroup;
+
+            return showGroupsState;
         default:
             return state;
     }
@@ -25,6 +33,12 @@ const showSheduleActionCreator = (data) => {
     return({
         type: SHOW_SHEDULE,
         data: data,
+    });
+}
+
+export const showGroupsSelectActionCreator = (data) => {
+    return ({
+        type: SHOW_GROUPS,
     });
 }
 

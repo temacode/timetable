@@ -67,6 +67,9 @@ function getLessonObject(e, lessonTeacher) {
     lesson.week = e.match(weekPreg) ?
         e.match(weekPreg)[0]
         : null;
+
+    lesson.reverseWeek = RegExp('кр').test(lesson.week) ? true : false;
+
     if (lesson.week) {
 
         lesson.week = lesson.week
@@ -88,6 +91,13 @@ function getLessonArray(lessonArray, lessonTeacher) {
     lessonArray.forEach(e => {
         lesson.push(getLessonObject(e, lessonTeacher));
     });
+
+    return lesson;
+}
+
+function eraseLesson(lesson) {
+    delete lesson.lesson;
+    delete lesson.reverseWeek;
 
     return lesson;
 }
@@ -155,116 +165,163 @@ module.exports = app => {
             let shedule = [];
 
             //Идем по расписанию и парсим предметы
-            for (let i = 0; i < 6; i++) {
+            for (let weekCounter = 0; weekCounter < 2; weekCounter++) {
+                
+                let week = weekNum+weekCounter;
 
-                let even = 1;
-                let odd = 1;
+                for (let i = 0; i < 6; i++) {
 
-                var sheduleList = [];
+                    let even = 1;
+                    let odd = 1;
 
-                for (let j = (i * 12); j < ((i * 12) + 12); j++) {
-                    var lessonInfo = {}
+                    var sheduleList = [];
 
-                    //Здесь хранится номер пары
-                    lessonInfo.num = (j % 2 === 0) ? even++ : odd++;
+                    for (let j = (i * 12); j < ((i * 12) + 12); j++) {
+                        var lessonInfo = {}
 
-                    //Здесь хранится четность пары
-                    lessonInfo.parity = (j % 2) === 1 ? true : false;
+                        let dayName = '';
 
-                    //Получаем номер ячейки
-                    lessonInfo.cell = (group.cellName + '' + (j + 4));
-
-                    //Номер ячейки с преподавателем
-                    lessonInfo.teacherCell = (group.cellTeacher + '' + (j + 4));
-
-                    //Записываем строку без форматирования
-                    lessonInfo.fullString = (typeof sheet[lessonInfo.cell] !== 'undefined' ? sheet[lessonInfo.cell].v : '').trim().replace(fullLessonPreg, '');
-
-                    //Записывает данные о паре
-                    let lessonData = lessonInfo.fullString.match(lessonDataPreg);
-
-                    let lessonTeacher = typeof sheet[lessonInfo.teacherCell] !== 'undefined' ?
-                        sheet[lessonInfo.teacherCell].v
-                            .trim()
-                            .replace(fullLessonPreg, '') :
-
-                        null;
-
-                    let lessonLocation = 'lol';
-
-                    lessonData = lessonData ? lessonData : '';
-
-                    lessonInfo.debug = lessonData;
-
-                    if (lessonData.length >= 1) {
-
-                        lessonInfo.lesson = lessonData.length > 1 ? 
-                                                getLessonArray(lessonData, lessonTeacher) 
-                                                : getLessonObject(lessonData[0], lessonTeacher);
-
-                        lessonInfo.reverseWeek = RegExp('кр').test(lessonInfo.week) ? true : false;
-                    }
-
-                    function checkParity(weekNum, parity) {
-                        if (weekNum % 2 === 0 && parity === true) {
-                            return true
-                        }
-                        if (weekNum % 2 !== 0 && parity === false) {
-                            return true
+                        switch (i) {
+                            case 0:
+                                dayName = 'Понедельник';
+                                break;
+                            case 1:
+                                dayName = 'Вторник';
+                                break;
+                            case 2:
+                                dayName = 'Среда';
+                                break;
+                            case 3:
+                                dayName = 'Четверг';
+                                break;
+                            case 4:
+                                dayName = 'Пятница';
+                                break;
+                            case 5:
+                                dayName = 'Суббота';
+                                break;
+                            default:
+                                dayName = 'Ошибка сканирования';
+                                break;
                         }
 
-                        return false;
-                    }
+                        lessonInfo.dayName = dayName;
 
-                    //Сервер отдает готовое расписание
-                    //Фильтр по дню
-                    if (checkParity(weekNum, lessonInfo.parity)) {
-                        
-                        //Если предмет не пустой
-                        if (lessonInfo.lesson) {
-                            if (Array.isArray(lessonInfo.lesson)) {
-                                //Множественные предметы
+                        //Здесь хранится номер пары
+                        lessonInfo.num = (j % 2 === 0) ? even++ : odd++;
 
-                                //Перебираем предметы
-                                let flag = true;
-                                lessonInfo.lesson.forEach(e => {
-                                    if (Array.isArray(e.week)) {
-                                        //Если есть недели и они соответствуют текущей
-                                        if (e.week.indexOf(weekNum) !== -1) {
+                        //Здесь хранится четность пары
+                        lessonInfo.parity = (j % 2) === 1 ? true : false;
+
+                        //Получаем номер ячейки
+                        lessonInfo.cell = (group.cellName + '' + (j + 4));
+
+                        //Номер ячейки с преподавателем
+                        lessonInfo.teacherCell = (group.cellTeacher + '' + (j + 4));
+
+                        //Записываем строку без форматирования
+                        lessonInfo.fullString = (typeof sheet[lessonInfo.cell] !== 'undefined' ? sheet[lessonInfo.cell].v : '').trim().replace(fullLessonPreg, '');
+
+                        //Записывает данные о паре
+                        let lessonData = lessonInfo.fullString.match(lessonDataPreg);
+
+                        let lessonTeacher = typeof sheet[lessonInfo.teacherCell] !== 'undefined' ?
+                                                sheet[lessonInfo.teacherCell].v 
+                                                : null;
+
+                        let lessonLocation = 'lol';
+
+                        lessonData = lessonData ? lessonData : '';
+
+                        lessonInfo.debug = lessonData;
+
+                        if (lessonData.length >= 1) {
+
+                            lessonInfo.lesson = lessonData.length > 1 ?
+                                getLessonArray(lessonData, lessonTeacher)
+                                : getLessonObject(lessonData[0], lessonTeacher);
+                        }
+
+                        function checkParity(week, parity) {
+                            if (week % 2 === 0 && parity === true) {
+                                return true
+                            }
+                            if (week % 2 !== 0 && parity === false) {
+                                return true
+                            }
+
+                            return false;
+                        }
+
+                        //Сервер отдает готовое расписание
+                        //Фильтр по дню
+                        //Нужно доработать фильрацию и сделать ее более логичной
+                        if (checkParity(week, lessonInfo.parity)) {
+
+                            //Если предмет не пустой
+                            if (lessonInfo.lesson) {
+                                if (Array.isArray(lessonInfo.lesson)) {
+                                    //Множественные предметы
+
+                                    //Перебираем предметы
+                                    let flag = true;
+                                    lessonInfo.lesson.forEach(e => {
+                                        if (Array.isArray(e.week)) {
+                                            //Если есть недели и они соответствуют текущей
+                                            if (e.reverseWeek) {
+                                                if (e.week.indexOf(week) === -1) {
+                                                    let newLessonInfo = { ...lessonInfo }
+                                                    newLessonInfo.lesson = e;
+                                                    sheduleList.push(newLessonInfo);
+                                                    flag = false;
+                                                }
+                                            } else {
+                                                if (e.week.indexOf(week) !== -1) {
+                                                    let newLessonInfo = { ...lessonInfo }
+                                                    newLessonInfo.lesson = e;
+                                                    sheduleList.push(newLessonInfo);
+                                                    flag = false;
+                                                }
+                                            }
+                                        } else {
                                             sheduleList.push(lessonInfo);
-                                            flag = false;
+                                        }
+                                    });
+                                    if (flag) {
+                                        sheduleList.push(eraseLesson(lessonInfo));
+                                    }
+                                } else {
+                                    //Единичные предметы
+
+                                    //Если есть недели
+                                    if (lessonInfo.lesson.week) {
+                                        if (lessonInfo.lesson.reverseWeek) {
+                                            if (lessonInfo.lesson.week.indexOf(week) === -1) {
+                                                sheduleList.push(lessonInfo);
+                                            } else {
+                                                sheduleList.push(eraseLesson(lessonInfo));
+                                            }
+                                        } else {
+                                            if (lessonInfo.lesson.week.indexOf(week) !== -1) {
+                                                sheduleList.push(lessonInfo);
+                                            } else {
+                                                sheduleList.push(eraseLesson(lessonInfo));
+                                            }
                                         }
                                     } else {
                                         sheduleList.push(lessonInfo);
                                     }
-                                });
-                                if (flag) {
-                                    sheduleList.push({});
                                 }
                             } else {
-                                //Единичные предметы
-
-                                //Если есть недели
-                                if (lessonInfo.lesson.week) {
-                                    //Если они соответствуют текущей неделе
-                                    if (lessonInfo.lesson.week.indexOf(weekNum) !== -1) {
-                                        sheduleList.push(lessonInfo);
-                                    } else {
-                                        sheduleList.push({});
-                                    }
-                                } else {
-                                    sheduleList.push(lessonInfo);
-                                }
+                                //Пустые пары, записываем, соблюдая четность
+                                sheduleList.push(lessonInfo);
                             }
-                        } else {
-                            //Пустые пары, записываем, соблюдая четность
-                            sheduleList.push(lessonInfo);
                         }
+                        //sheduleList.push(lessonInfo);
                     }
-                    //sheduleList.push(lessonInfo);
-                }
 
-                shedule.push(sheduleList);
+                    shedule.push(sheduleList);
+                }
             }
 
             group.shedule = [...shedule];
