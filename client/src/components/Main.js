@@ -1,64 +1,81 @@
 import React from 'react';
 import styled from 'styled-components';
 import GroupContainer from './GroupContainer';
+import Header from './Header';
 
 const MainBlock = styled.div`
     width: 100%;
     min-height: 100%;
-    padding: 20px;
     box-sizing: border-box;
 `;
 
 const GroupSelect = styled.div`
-    display: inline-block;
-    padding: 8px 16px;
-    border-radius: 6px;
-    box-shadow: 0 1px 6px 1px rgba(0,0,0,0.15);
-    margin-bottom: 20px;
-    cursor: pointer;
-    height: ${props => props.isSelecting ? props.itemsNum*45+'px' : '20px'};
-    transition: 0.1s;
-    user-select: none;
-    overflow: hidden;
+    overflow-x: scroll;
+    display: flex;
+    align-items: flex-start;
+    padding: 10px 15px 20px 15px;
+
 `;
 
 const GroupSelectObj = styled.div`
-    margin: 5px;
-    text-align: center;
-    height: 40px;
     display: flex;
-    justify-content: center;
+    flex-shrink: 0;
     align-items: center;
-    background: red;
+    padding: 8px 16px;
+    border-radius: 6px;
+    box-shadow: 0 7px 19px -1px hsla(240,4%,69%,.3);
+    margin: 5px 10px;
+    :first-child {
+        margin-left: 0;
+    }
+    height: 40px;
+    background: ${props => props.selected ? '#66AC7E' : ''};
+    color: ${props => props.selected ? 'white' : ''};
 `;
 
 class Main extends React.Component {
-
     componentDidMount() {
-        this.props.getShedule();
+        const { cookies } = this.props;
+        this.props.getShedule(cookies);
     }
 
     componentDidUpdate() {
         console.log(this.props.groups);
+        if (this.props.isSelectingGroup) {
+            console.log(this.refs);
+            this.refs.groupSelect.scrollLeft = 0;
+        }
     }
 
     render() {
+        const { cookies } = this.props;
+
         let groupSelectList = this.props.groups.map((e, i) => {
-            return (
-                <GroupSelectObj key={ i }>{e.groupName}</GroupSelectObj>
-            );
+            if (e.groupName !== this.props.selectedGroup) {
+                return (
+                    <GroupSelectObj key={i} onClick={() => { this.props.setGroupCookie(cookies, e.groupName, this.refs.groupSelect) }}>{e.groupNameRus}</GroupSelectObj>
+                );
+            }
+            return null;
         });
 
         let groups = this.props.groups.map((e, i) => {
-            return (<GroupContainer key={i} group={e}></GroupContainer>);
+            if (e.groupName === this.props.selectedGroup) {
+                return (<GroupContainer key={i} group={e}></GroupContainer>);
+            }
+            return null;
         });
         return (
-            <MainBlock>
-                <GroupSelect onClick={this.props.showGroupsSelect} itemsNum={ groupSelectList.length } isSelecting={this.props.isSelectingGroup}>{this.props.isSelectingGroup ? groupSelectList : 'Выбор группы'}</GroupSelect>
-                <div>
-                    {this.props.groups ? groups : 'Ничего нет'}
-                </div>
-            </MainBlock>
+            <div>
+                <Header></Header>
+                <MainBlock>
+                    <GroupSelect ref="groupSelect">
+                        <GroupSelectObj selected>{this.props.selectedGroupRus}</GroupSelectObj>
+                        {groupSelectList}
+                    </GroupSelect>
+                    {this.props.groups.length > 0 ? groups : 'Загрузка'}
+                </MainBlock>
+            </div>
         );
     }
 }

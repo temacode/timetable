@@ -5,11 +5,14 @@ import App from './App';
 import * as serviceWorker from './serviceWorker';
 import { Provider } from 'react-redux';
 import store from './reduxStore';
+import { CookiesProvider } from 'react-cookie';
 
 ReactDOM.render(
-    <Provider store={ store }>
-        <App />
-    </Provider>
+    <CookiesProvider>
+        <Provider store={store}>
+            <App />
+        </Provider>
+    </CookiesProvider>
     , document.getElementById('root'));
 
 // If you want your app to work offline and load faster, you can change

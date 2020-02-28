@@ -1,21 +1,25 @@
 import { connect } from 'react-redux';
 import Main from './Main';
-import { getSheduleDataThunkCreator, showGroupsSelectActionCreator } from '../reducers/mainReducer';
+import { getSheduleDataThunkCreator, setGroupCookieThunkCreator } from '../reducers/mainReducer';
+import { translitToRus } from '../helpers/translitToRus';
 
-let mapStateToProps = state => {
+let mapStateToProps = (state, ownProps) => {
     return({
+        cookies: ownProps.cookies,
         groups: state.main.groups,
+        selectedGroup: state.main.selectedGroup,
+        selectedGroupRus: translitToRus(state.main.selectedGroup),
         isSelectingGroup: state.main.isSelectingGroup,
     });
 }
 
 let mapDispatchToProps = dispatch => {
     return({
-        getShedule: () => {
-            dispatch(getSheduleDataThunkCreator());
+        getShedule: (cookies) => {
+            dispatch(getSheduleDataThunkCreator(cookies));
         },
-        showGroupsSelect: () => {
-            dispatch(showGroupsSelectActionCreator())
+        setGroupCookie: (cookies, value, ref) => {
+            dispatch(setGroupCookieThunkCreator(cookies, value, ref));
         }
     });
 }

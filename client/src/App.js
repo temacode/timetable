@@ -1,12 +1,11 @@
 import React from 'react';
-import Header from './components/Header';
 import MainContainer from './components/MainContainer';
+import { withCookies } from 'react-cookie';
 
 const App = props => (
     <div>
-        <Header></Header>
-        <MainContainer></MainContainer>
+        <MainContainer cookies={ props.cookies }></MainContainer>
     </div>
 );
 
-export default App;
+export default withCookies(App);

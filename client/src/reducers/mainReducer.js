@@ -1,12 +1,13 @@
 import axios from 'axios';
+import { scrollTo } from '../helpers/scrollLeftAnimation';
 
 const SHOW_SHEDULE = 'SHOW_SHEDULE';
-const SHOW_GROUPS = 'SHOW_GROUPS';
+const SET_GROUP_COOKIE = 'SET_GROUP_COOKIE';
+const REMOVE_GROUP_COOKIE = 'REMOVE_GROUP_COOKIE';
 
 let initialState = {
     groups: [],
-    groupsNames: [],
-    isSelectingGroup: false,
+    selectedGroup: 'bbbo-05-17',
 }
 
 let mainReducer = (state = initialState, action) => {
@@ -18,11 +19,11 @@ let mainReducer = (state = initialState, action) => {
             sheduleState.groups = [...action.data];
             //console.log(sheduleState.groups);
             return sheduleState;
-        case SHOW_GROUPS:
-            let showGroupsState = { ...state };
-            showGroupsState.isSelectingGroup = !showGroupsState.isSelectingGroup;
+        case SET_GROUP_COOKIE:
+            let setGroupCookieState = { ...state };
+            setGroupCookieState.selectedGroup = action.data;
 
-            return showGroupsState;
+            return setGroupCookieState;
         default:
             return state;
     }
@@ -36,16 +37,39 @@ const showSheduleActionCreator = (data) => {
     });
 }
 
-export const showGroupsSelectActionCreator = (data) => {
-    return ({
-        type: SHOW_GROUPS,
-    });
-}
+const setGroupCookieActionCreator = data => ({
+    type: SET_GROUP_COOKIE,
+    data: data,
+});
 
-export const getSheduleDataThunkCreator = () => dispatch => {
+const removeGroupCookieActionCreator = () => ({
+    type: REMOVE_GROUP_COOKIE
+});
+
+export const getSheduleDataThunkCreator = cookies => dispatch => {
+    const selectedGroup = cookies.get('selectedGroup');
+    if (selectedGroup) {
+        dispatch(setGroupCookieActionCreator(selectedGroup));
+    }
     axios.get('/api/timetable/').then(res => {
         dispatch(showSheduleActionCreator(res.data));
     });
+}
+
+export const setGroupCookieThunkCreator = (cookies, value = null, ref) => dispatch => {
+    //ref.scrollLeft = 0;
+    scrollTo(ref, 0, 300);
+    if (value) {
+        cookies.set('selectedGroup', value, { path: '/' });
+        dispatch(setGroupCookieActionCreator(value));
+    } else {
+        console.log('Ошибка получения значения');
+    }
+}
+
+export const removeGroupCookieThunkCreator = cookies => dispatch => {
+    cookies.remove('test', { path: '/' });
+    dispatch(removeGroupCookieActionCreator());
 }
 
 export default mainReducer;

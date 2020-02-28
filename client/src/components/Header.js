@@ -3,12 +3,14 @@ import styled from 'styled-components';
 
 const HeaderBlock = styled.div`
     width: 100%;
+    box-sizing: border-box;
     height: 58px;
-    background: #986161;
+    background: #fff;
+    border-bottom: 1px solid #eaeaea;
     overflow: hidden;
+    padding: 5px 20px;
     h1 {
-        color: white;
-        text-align: center;
+        color: #393939;
         font-size: 25px;
         margin-top: 12px;
     }

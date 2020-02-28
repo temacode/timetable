@@ -10,6 +10,7 @@ const lessonDataPreg = new RegExp(/((([0-9.,\sнкр]+)|)([A-Za-zА-Яа-я\s-.,
 const weekPreg = new RegExp(/^([0-9.,нкр\s]+)/gim);//Недели предмета
 const extraLetterInWeekPreg = new RegExp(/[.\sнкр]/gim);//Дополнительные символы, помимо дня в списке недель
 const lessonNamePreg = new RegExp(/[а-яА-Я]{2,}(\s|)([а-яА-Я\s]*)[а-яА-Я]/gim);//Название предмета
+const teachersNamePreg = new RegExp(/[а-яА-Я]+\s{0,2}[а-яА-Я.]+/gim);//Имя препода
 
 function rus2translit(string) {
     let converter = {
@@ -88,8 +89,14 @@ function getLessonObject(e, lessonTeacher) {
 function getLessonArray(lessonArray, lessonTeacher) {
     let lesson = [];
 
-    lessonArray.forEach(e => {
-        lesson.push(getLessonObject(e, lessonTeacher));
+    lessonArray.forEach((e,i) => {
+        let initialTeacherName = '';
+        if (typeof lessonTeacher[i] === 'undefined') {
+            lessonTeacher[i] = initialTeacherName;
+        } else {
+            initialTeacherName = lessonTeacher[i];
+        }
+        lesson.push(getLessonObject(e, lessonTeacher[i]));
     });
 
     return lesson;
@@ -100,6 +107,17 @@ function eraseLesson(lesson) {
     delete lesson.reverseWeek;
 
     return lesson;
+}
+
+function checkParity(week, parity) {
+    if (week % 2 === 0 && parity === true) {
+        return true
+    }
+    if (week % 2 !== 0 && parity === false) {
+        return true
+    }
+
+    return false;
 }
 
 Date.prototype.getWeek = function () {
@@ -153,12 +171,15 @@ module.exports = app => {
                     cellName: cellName,
                     cellNum: cellNum,
                     cellTeacher: cellTeacher,
-                    groupName: groupNameRus
+                    groupNameRus: groupNameRus,
+                    groupName: groupName
                 }
 
                 groups.push(groupDataObject);
             }
         }
+
+        let teachersList = [];
 
         groups.map(group => {
 
@@ -226,8 +247,18 @@ module.exports = app => {
                         let lessonData = lessonInfo.fullString.match(lessonDataPreg);
 
                         let lessonTeacher = typeof sheet[lessonInfo.teacherCell] !== 'undefined' ?
-                                                sheet[lessonInfo.teacherCell].v 
-                                                : null;
+                                                sheet[lessonInfo.teacherCell].v
+                                                .trim()
+                                                .match(teachersNamePreg)
+                                                : '';
+                        /* if (teachersList.indexOf(lessonTeacher) === -1) {
+                            if (lessonTeacher) {
+                                teachersList.push(lessonTeacher.trim().match(teachersNamePreg));
+                                teachersList.push(lessonInfo.cell);
+                            } else {
+                                teachersList.push(lessonTeacher);
+                            }
+                        } */
 
                         let lessonLocation = 'lol';
 
@@ -240,17 +271,6 @@ module.exports = app => {
                             lessonInfo.lesson = lessonData.length > 1 ?
                                 getLessonArray(lessonData, lessonTeacher)
                                 : getLessonObject(lessonData[0], lessonTeacher);
-                        }
-
-                        function checkParity(week, parity) {
-                            if (week % 2 === 0 && parity === true) {
-                                return true
-                            }
-                            if (week % 2 !== 0 && parity === false) {
-                                return true
-                            }
-
-                            return false;
                         }
 
                         //Сервер отдает готовое расписание
@@ -326,6 +346,17 @@ module.exports = app => {
 
             group.shedule = [...shedule];
         })
+
+        /* teachersList.map((e,i,array) => {
+            if (Array.isArray(e)) {
+                e.forEach(elem => {
+                    if (elem.length > 6) {
+                        console.log(elem);
+                        console.log(array[i+1]);
+                    }
+                })
+            }
+        }); */
 
         res.status(200).send(groups);
     });

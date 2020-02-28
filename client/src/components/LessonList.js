@@ -2,7 +2,8 @@ import React from 'react';
 import styled from 'styled-components';
 
 const MainBody = styled.div`
-    width: 100%;
+    width: calc(100% - 30px);
+    margin: 20px 15px;
     min-height: 200px;
     background: white;
     border-radius: 12px;
