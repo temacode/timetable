@@ -11,14 +11,20 @@ const HeaderBlock = styled.div`
     padding: 5px 20px;
     h1 {
         color: #393939;
-        font-size: 25px;
+        font-size: 20px;
         margin-top: 12px;
+        font-family: Rubik Mono One;
+    }
+    span {
+        color: #999999;
+        font-size: 12px;
+        margin-left: 5px;
     }
 `;
 
 const Header = props => (
     <HeaderBlock>
-        <h1>Хедер</h1>
+        <h1>РАСПИСАНИЕ<span>МИРЭА</span></h1>
     </HeaderBlock>
 );
 

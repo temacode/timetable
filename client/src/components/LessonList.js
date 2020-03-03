@@ -1,5 +1,6 @@
 import React from 'react';
 import styled from 'styled-components';
+import { lessonNumToTime } from '../helpers/lessonNumToTime';
 
 const MainBody = styled.div`
     width: calc(100% - 30px);
@@ -16,6 +17,7 @@ const DayHeader = styled.div`
     width: 100%;
     padding: 15px 0;
     text-align: center;
+    font-family: Rubik Mono One;
 `;
 const Lesson = styled.div`
     width: 100%;
@@ -50,6 +52,11 @@ const Name = styled.div`
     width: 40%;
     padding: 0 4px 4px 4px;
 `;
+
+const LessonLocation = styled.div`
+
+`;
+
 const Teacher = styled.div`
     width: 30%;
     padding: 0 8px 4px 4px;
@@ -60,21 +67,25 @@ const Teacher = styled.div`
 class LessonList extends React.Component {
     render() {
         let lessons = this.props.lessonList.map((e, i) => {
+            let lessonTime = lessonNumToTime(i);
             return (
                 <Lesson key={i}>
                     <Num>{i + 1}</Num>
                     <Time>
-                        <div>9:00</div>
-                        <div>10:30</div>
+                        <div>{lessonTime[0]}</div>
+                        <div>{lessonTime[1]}</div>
                     </Time>
-                    <Name>{e.lesson ? e.lesson.name : ''}</Name>
+                    <Name>
+                        {e.lesson ? e.lesson.name : ''}
+                        <LessonLocation>{e.lesson ? e.lesson.location + ", " + e.lesson.type : ''}</LessonLocation>
+                    </Name>
                     <Teacher>{e.lesson ? e.lesson.teacher : ''}</Teacher>
                 </Lesson>
             );
         });
         return (
             <MainBody>
-                <DayHeader>{ this.props.dayName }</DayHeader>
+                <DayHeader>{this.props.dayName}</DayHeader>
                 {lessons}
             </MainBody>
         );

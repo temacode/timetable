@@ -3,7 +3,7 @@ const bodyParser = require('body-parser');
 
 const app = express();
 
-const port = process.env.PORT || 5000;
+const port = process.env.PORT || 80;
 
 app.use(bodyParser.json());
 
@@ -12,7 +12,7 @@ require('./routes/timetableRoute')(app);
 app.use(express.static('public'));
 
 if (process.env.NODE_ENV === 'production') {
-    app.use(express.static('client/build'));
+    app.use(express.static('public'));
 
     const path = require('path');
     app.get('*', (req, res) => {

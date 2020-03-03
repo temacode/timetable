@@ -61,7 +61,7 @@ function rus2translit(string) {
 }
 
 //Сюда приходит пара с неделями
-function getLessonObject(e, lessonTeacher) {
+function getLessonObject(e, lessonData) {
 
     let lesson = {}
 
@@ -81,22 +81,47 @@ function getLessonObject(e, lessonTeacher) {
 
     lesson.name = e.match(lessonNamePreg) ? e.match(lessonNamePreg)[0] : '';
 
-    lesson.teacher = lessonTeacher;
+    lesson.teacher = lessonData.teacher;
+    
+    lesson.location = lessonData.location;
+    
+    lesson.type = lessonData.type;
 
     return lesson;
 }
 
-function getLessonArray(lessonArray, lessonTeacher) {
+function getLessonArray(lessonArray, lessonData) {
     let lesson = [];
+    let initialTeacherName = '';
+    let initialLocation = '';
+    let initialType = '';
 
-    lessonArray.forEach((e,i) => {
-        let initialTeacherName = '';
-        if (typeof lessonTeacher[i] === 'undefined') {
-            lessonTeacher[i] = initialTeacherName;
+    lessonArray.forEach((e, i) => {
+        if (typeof lessonData.teacher[i] === 'undefined') {
+            lessonData.teacher[i] = initialTeacherName;
         } else {
-            initialTeacherName = lessonTeacher[i];
+            initialTeacherName = lessonData.teacher[i];
         }
-        lesson.push(getLessonObject(e, lessonTeacher[i]));
+
+        if (typeof lessonData.location[i] === 'undefined') {
+            lessonData.location[i] = initialLocation;
+        } else {
+            initialLocation = lessonData.location[i];
+        }
+
+        if (typeof lessonData.type[i] === 'undefined') {
+            lessonData.type[i] = initialType;
+        } else {
+            initialType = lessonData.type[i];
+        }
+
+        let initialLessonData = {
+            teacher: lessonData.teacher[i],
+            location: lessonData.location[i],
+            type: lessonData.type[i],
+        }
+
+        lesson.push(getLessonObject(e, initialLessonData));
     });
 
     return lesson;
@@ -139,9 +164,11 @@ module.exports = app => {
         const sheetName = workbook.SheetNames[0];
         const sheet = workbook.Sheets[sheetName];
 
-        var weekNum = new Date();
+        let weekNum = new Date();
         weekNum = weekNum.getWeek();
         weekNum = weekNum < 21 ? (weekNum - 6) : (weekNum - 32);
+
+        let dayNum = new Date().getDay() - 1;
 
         let groups = [];
 
@@ -165,14 +192,18 @@ module.exports = app => {
                 let cellName = cell.toString().match(cellNamePreg)[0];
                 let cellNum = cell.toString().match(cellNumPreg)[0];
                 let cellTeacher = (sheetKeys[sheetKeys.indexOf(cellName) + 2]);
+                let cellLocation = (sheetKeys[sheetKeys.indexOf(cellName) + 3]);
+                let cellLessonType = (sheetKeys[sheetKeys.indexOf(cellName) + 1]);
 
                 let groupDataObject = {
                     cell: cell,
                     cellName: cellName,
                     cellNum: cellNum,
                     cellTeacher: cellTeacher,
+                    cellLocation: cellLocation,
+                    cellLessonType: cellLessonType,
                     groupNameRus: groupNameRus,
-                    groupName: groupName
+                    groupName: groupName,
                 }
 
                 groups.push(groupDataObject);
@@ -186,9 +217,9 @@ module.exports = app => {
             let shedule = [];
 
             //Идем по расписанию и парсим предметы
-            for (let weekCounter = 0; weekCounter < 2; weekCounter++) {
-                
-                let week = weekNum+weekCounter;
+            for (let weekCounter = 0; weekCounter < 3; weekCounter++) {
+
+                let week = weekNum + weekCounter;
 
                 for (let i = 0; i < 6; i++) {
 
@@ -239,38 +270,42 @@ module.exports = app => {
 
                         //Номер ячейки с преподавателем
                         lessonInfo.teacherCell = (group.cellTeacher + '' + (j + 4));
+                        lessonInfo.locationCell = (group.cellLocation + '' + (j + 4));
+                        lessonInfo.lessonTypeCell = (group.cellLessonType + '' + (j + 4));
 
                         //Записываем строку без форматирования
                         lessonInfo.fullString = (typeof sheet[lessonInfo.cell] !== 'undefined' ? sheet[lessonInfo.cell].v : '').trim().replace(fullLessonPreg, '');
 
                         //Записывает данные о паре
-                        let lessonData = lessonInfo.fullString.match(lessonDataPreg);
+                        lessonListAfterPreg = lessonInfo.fullString.match(lessonDataPreg);
+                        lessonListAfterPreg = lessonListAfterPreg ? lessonListAfterPreg : '';
+                        lessonInfo.debug = lessonListAfterPreg;
 
                         let lessonTeacher = typeof sheet[lessonInfo.teacherCell] !== 'undefined' ?
-                                                sheet[lessonInfo.teacherCell].v
-                                                .trim()
-                                                .match(teachersNamePreg)
-                                                : '';
-                        /* if (teachersList.indexOf(lessonTeacher) === -1) {
-                            if (lessonTeacher) {
-                                teachersList.push(lessonTeacher.trim().match(teachersNamePreg));
-                                teachersList.push(lessonInfo.cell);
-                            } else {
-                                teachersList.push(lessonTeacher);
-                            }
-                        } */
+                            sheet[lessonInfo.teacherCell].v
+                                .trim()
+                                .match(teachersNamePreg)
+                            : '';
 
-                        let lessonLocation = 'lol';
+                        let lessonLocation = typeof sheet[lessonInfo.locationCell] !== 'undefined' ?
+                            sheet[lessonInfo.locationCell].v.toString().trim().split(/[\n]|\s{4,}/gim)
+                            : '';
 
-                        lessonData = lessonData ? lessonData : '';
+                        let lesssonType = typeof sheet[lessonInfo.lessonTypeCell] !== 'undefined' ?
+                            sheet[lessonInfo.lessonTypeCell].v.toString().trim().split(/[\n]|\s{4,}/gim)
+                            : '';
 
-                        lessonInfo.debug = lessonData;
+                        let lessonData = {
+                            teacher: lessonTeacher,
+                            location: lessonLocation,
+                            type: lesssonType,
+                        }
 
-                        if (lessonData.length >= 1) {
+                        if (lessonListAfterPreg.length >= 1) {
 
-                            lessonInfo.lesson = lessonData.length > 1 ?
-                                getLessonArray(lessonData, lessonTeacher)
-                                : getLessonObject(lessonData[0], lessonTeacher);
+                            lessonInfo.lesson = lessonListAfterPreg.length > 1 ?
+                                getLessonArray(lessonListAfterPreg, lessonData)
+                                : getLessonObject(lessonListAfterPreg[0], lessonData);
                         }
 
                         //Сервер отдает готовое расписание
@@ -343,6 +378,10 @@ module.exports = app => {
                     shedule.push(sheduleList);
                 }
             }
+
+            shedule = shedule.filter((e,i) => {
+                return i < dayNum ? false : true;
+            });
 
             group.shedule = [...shedule];
         })
