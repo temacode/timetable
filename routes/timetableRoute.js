@@ -7,7 +7,7 @@ const cellNamePreg = new RegExp(/^[a-z]+/i);//Номер ячейки (толь�
 const cellNumPreg = new RegExp(/[0-9]+$/);//Номер ячейки (только цифры)
 const fullLessonPreg = new RegExp(/[^a-zA-Zа-яА-Я0-9\s\n.,]/gim);//Полностью значение ячейки с парой
 const lessonDataPreg = new RegExp(/((([0-9.,\sнкр]+)|)([A-Za-zА-Яа-я\s-.,]+)([0-9\s]+гр|))/gim);//Название предмета с его неделями
-const weekPreg = new RegExp(/^([0-9.,нкр\s]+)/gim);//Недели предмета
+const weekPreg = new RegExp(/^((кр)|)([0-9.,н\s]+)/gim);//Недели предмета
 const extraLetterInWeekPreg = new RegExp(/[.\sнкр]/gim);//Дополнительные символы, помимо дня в списке недель
 const lessonNamePreg = new RegExp(/[а-яА-Я]{2,}(\s|)([а-яА-Я\s]*)[а-яА-Я]/gim);//Название предмета
 const teachersNamePreg = new RegExp(/[а-яА-Я]+\s{0,2}[а-яА-Я.]+/gim);//Имя препода
@@ -61,7 +61,7 @@ function rus2translit(string) {
 }
 
 //Сюда приходит пара с неделями
-function getLessonObject(e, lessonData) {
+function getLessonObject(e, lessonData, debugCell = '') {
 
     let lesson = {}
 
@@ -90,7 +90,7 @@ function getLessonObject(e, lessonData) {
     return lesson;
 }
 
-function getLessonArray(lessonArray, lessonData) {
+function getLessonArray(lessonArray, lessonData, debugCell = '') {
     let lesson = [];
     let initialTeacherName = '';
     let initialLocation = '';
@@ -128,6 +128,7 @@ function getLessonArray(lessonArray, lessonData) {
 }
 
 function eraseLesson(lesson) {
+    //Нужно переписать алгоритм очистки
     delete lesson.lesson;
     delete lesson.reverseWeek;
 
@@ -301,8 +302,8 @@ module.exports = app => {
                             type: lesssonType,
                         }
 
-                        if (lessonListAfterPreg.length > 1) {
-
+                        //Тут было строго больше 1, я сделал больше или равно, не уверен, тчо это хороший ход
+                        if (lessonListAfterPreg.length >= 1) {
                             lessonInfo.lesson = lessonListAfterPreg.length > 1 ?
                                 getLessonArray(lessonListAfterPreg, lessonData)
                                 : getLessonObject(lessonListAfterPreg[0], lessonData);
@@ -311,8 +312,9 @@ module.exports = app => {
                         //Сервер отдает готовое расписание
                         //Фильтр по дню
                         //Нужно доработать фильрацию и сделать ее более логичной
+                        //Баги при определении локации
+                        //Экономическая безопасность хозяйствующего субъекта
                         if (checkParity(week, lessonInfo.parity)) {
-
                             //Если предмет не пустой
                             if (lessonInfo.lesson) {
                                 if (Array.isArray(lessonInfo.lesson)) {
@@ -385,17 +387,6 @@ module.exports = app => {
 
             group.shedule = [...shedule];
         })
-
-        /* teachersList.map((e,i,array) => {
-            if (Array.isArray(e)) {
-                e.forEach(elem => {
-                    if (elem.length > 6) {
-                        console.log(elem);
-                        console.log(array[i+1]);
-                    }
-                })
-            }
-        }); */
 
         res.status(200).send(groups);
     });
