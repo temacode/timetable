@@ -301,7 +301,7 @@ module.exports = app => {
                             type: lesssonType,
                         }
 
-                        if (lessonListAfterPreg.length >= 1) {
+                        if (lessonListAfterPreg.length > 1) {
 
                             lessonInfo.lesson = lessonListAfterPreg.length > 1 ?
                                 getLessonArray(lessonListAfterPreg, lessonData)
