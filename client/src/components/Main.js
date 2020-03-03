@@ -48,12 +48,10 @@ class Main extends React.Component {
     }
 
     render() {
-        const { cookies } = this.props;
-
         let groupSelectList = this.props.groups.map((e, i) => {
             if (e.groupName !== this.props.selectedGroup) {
                 return (
-                    <GroupSelectObj key={i} onClick={() => { this.props.setGroupCookie(cookies, e.groupName, this.refs.groupSelect) }}>{e.groupNameRus}</GroupSelectObj>
+                    <GroupSelectObj key={i} onClick={() => { this.props.setGroupCookie(e.groupName, this.refs.groupSelect) }}>{e.groupNameRus}</GroupSelectObj>
                 );
             }
             return null;

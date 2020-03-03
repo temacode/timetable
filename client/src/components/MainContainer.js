@@ -15,11 +15,11 @@ let mapStateToProps = (state, ownProps) => {
 
 let mapDispatchToProps = dispatch => {
     return({
-        getShedule: (cookies) => {
-            dispatch(getSheduleDataThunkCreator(cookies));
+        getShedule: () => {
+            dispatch(getSheduleDataThunkCreator());
         },
-        setGroupCookie: (cookies, value, ref) => {
-            dispatch(setGroupCookieThunkCreator(cookies, value, ref));
+        setGroupCookie: (value, ref) => {
+            dispatch(setGroupCookieThunkCreator(value, ref));
         }
     });
 }
