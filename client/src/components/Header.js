@@ -24,7 +24,7 @@ const HeaderBlock = styled.div`
 
 const Header = props => (
     <HeaderBlock>
-        <h1>РАСПИСАНИЕ<span>МИРЭА</span></h1>
+        <h1>КАРАНТИН<span> в МИРЭА</span></h1>
     </HeaderBlock>
 );
 

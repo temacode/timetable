@@ -8,6 +8,7 @@ const port = process.env.PORT || 5000;
 app.use(bodyParser.json());
 
 require('./routes/timetableRoute')(app);
+require('./routes/serviceRoute')(app);
 
 app.use(express.static('public'));
 

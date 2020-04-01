@@ -3,9 +3,8 @@ import Main from './Main';
 import { getSheduleDataThunkCreator, setGroupCookieThunkCreator } from '../reducers/mainReducer';
 import { translitToRus } from '../helpers/translitToRus';
 
-let mapStateToProps = (state, ownProps) => {
+let mapStateToProps = (state) => {
     return({
-        cookies: ownProps.cookies,
         groups: state.main.groups,
         selectedGroup: state.main.selectedGroup,
         selectedGroupRus: translitToRus(state.main.selectedGroup),
