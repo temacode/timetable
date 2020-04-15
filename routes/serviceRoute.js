@@ -49,11 +49,9 @@ module.exports = app => {
                                         shortName.push(e[0].toLowerCase());
                                         return;
                                     }
-                                    
                                 });
 
                                 shortName = shortName.join('');
-                                
                                 universityList.push({
                                     name: $(this).find('.uk-text-bold').text(),
                                     shortName: shortName,

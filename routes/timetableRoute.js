@@ -82,9 +82,9 @@ function getLessonObject(e, lessonData, debugCell = '') {
     lesson.name = e.match(lessonNamePreg) ? e.match(lessonNamePreg)[0] : '';
 
     lesson.teacher = lessonData.teacher;
-    
+
     lesson.location = lessonData.location;
-    
+
     lesson.type = lessonData.type;
 
     return lesson;
@@ -167,6 +167,7 @@ module.exports = app => {
 
         let weekNum = new Date();
         weekNum = weekNum.getWeek();
+        console.log(weekNum);
         weekNum = weekNum < 21 ? (weekNum - 6) : (weekNum - 32);
 
         let dayNum = new Date().getDay() - 1;
