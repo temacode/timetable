@@ -2,33 +2,30 @@ const needle = require('needle');
 const tress = require('tress');
 const cheerio = require('cheerio');
 const URL = 'https://www.mirea.ru/schedule/';
-
-const universityList = [];
+const download = require('download-file');
 
 module.exports = app => {
     app.get('/api/service/', (req, res) => {
 
         var q = tress((url, callback) => {
+            const universityList = [];
             needle.get(url, (err, res) => {
                 if (err) throw err;
 
                 var $ = cheerio.load(res.body);
-
-                /* $('.uk-link-toggle').each((i, e) => {
-                    console.log(e.attribs.href);
-                }); */
 
                 $('ul[uk-tab] li a').each(function() {
                     if ($(this).text().trim() === 'Бакалавриат/специалитет') {
                         var tabNum = ($(this).attr('href').split('-'))[1];
 
                         $('.uk-switcher li:nth-child(' + tabNum + ') .uk-card').each(function() {
-                            let sheduleLinks = [];
+                            const scheduleLinks = [];
 
                             $(this).find('.uk-link-toggle').each(function() {
-                                if ($(this).attr('href')) {
-                                    sheduleLinks.push($(this).attr('href'));
-                                }
+                                let scheduleItem = {};
+                                scheduleItem.link = $(this).attr('href');
+                                scheduleItem.name = $(this).find('.uk-link-heading').text().trim();
+                                scheduleLinks.push(scheduleItem);
                             });
 
                             if ($(this).find('.uk-text-bold').text().trim()) {
@@ -44,7 +41,7 @@ module.exports = app => {
                                     if (e.length > 1) {
                                         shortName.push(e[0].toUpperCase());
                                         return;
-                                    } 
+                                    }
                                     if (e.length === 1) {
                                         shortName.push(e[0].toLowerCase());
                                         return;
@@ -55,7 +52,7 @@ module.exports = app => {
                                 universityList.push({
                                     name: $(this).find('.uk-text-bold').text(),
                                     shortName: shortName,
-                                    hrefs: sheduleLinks
+                                    links: scheduleLinks
                                 });
                             }
                         });
@@ -63,16 +60,11 @@ module.exports = app => {
                     }
                 });
 
-                callback();
+                callback(universityList);
             });
         });
-
-        q.drain = () => {
-            //require('fs').writeFileSync('./data.json', JSON.stringify(results, null, 4));
-            console.log(universityList);
-        }
-        q.push(URL);
-
-        res.status(200).send('OK');
+        q.push(URL, (universityListx ) => {
+            res.status(200).send(universityList);
+        });
     });
 }
