@@ -30,6 +30,6 @@
         "nodemon": "^2.0.2",
         "react-spinners-kit": "^1.9.1",
         "tress": "^1.1.4",
-        "xlsx": "^0.15.5"
+        "xlsx": "^0.17.0"
     }
 }
